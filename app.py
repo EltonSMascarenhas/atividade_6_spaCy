@@ -12,10 +12,11 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. Inicialização do Modelo spaCy em Português (com Cache)
+# 2. Inicialização do Modelo spaCy em Português de Alta Precisão (com Cache)
 @st.cache_resource
 def carregar_modelo_ner():
-    return spacy.load("pt_core_news_sm")
+    # Mudamos para pt_core_news_lg para garantir precisão máxima e alinhar com o Render
+    return spacy.load("pt_core_news_lg")
 
 nlp = carregar_modelo_ner()
 
@@ -69,18 +70,17 @@ else:
         st.success(f"Arquivo '{nome_arquivo}' pronto para análise!")
 
 # =========================================================================
-# 4. Botão de Disparo (Agora FIXO na tela, melhorando o design)
+# 4. Botão de Disparo Fixo na Tela
 # =========================================================================
 st.markdown("---")
 if st.button("Iniciar Extração de Entidades (NER)", type="primary", use_container_width=True):
     
-    # Validação: Se o usuário clicar com tudo vazio, toma um puxão de orelha amigável
     if not texto_para_analise.strip():
         st.warning("⚠️ O sistema não detectou nenhum conteúdo. Por favor, digite um texto ou faça o upload de um arquivo primeiro!")
     
     else:
-        with st.spinner("O spaCy está escaneando o documento atual..."):
-            # Executa o NER
+        with st.spinner("O spaCy de Alta Precisão está escaneando o documento atual..."):
+            # Executa o NER de alta precisão
             doc = nlp(texto_para_analise)
             
             # --- VISUALIZAÇÃO GRÁFICA (Displacy) ---
@@ -91,6 +91,10 @@ if st.button("Iniciar Extração de Entidades (NER)", type="primary", use_contai
             # --- CONSTRUÇÃO DA TABELA DE DADOS ---
             dados_entidades = []
             for ent in doc.ents:
+                # Filtro inteligente: ignora ruídos analíticos de 1 letra ou termos fantasmas conhecidos
+                if len(ent.text.strip()) <= 1 or ent.text.strip().lower() in ["system", "super annoying"]:
+                    continue
+                    
                 tipo_traduzido = TRADUCAO_ENTIDADES.get(ent.label_, ent.label_)
                 dados_entidades.append({
                     "Entidade Encontrada": ent.text,
